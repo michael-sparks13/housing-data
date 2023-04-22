@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <title>US Housing Data</title>
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css"
+      integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65"
+      crossorigin="anonymous"
+    />
+    <!-- Leaflet CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+      integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+      crossorigin=""
+    />
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@200;500&display=swap" rel="stylesheet">
+    <style>
+      body {
+        background: #20282e;
+        font-family: 'Raleway', sans-serif;
+        font-weight: 500;
+        font-size: 100%;
+      }
+
+      footer {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        height: 3rem;
+      }
+
+      h1 {
+        font-weight: 800;
+      }
+
+      p, blockquote {
+        line-height: 1.7rem;
+        font-family: 'Raleway', sans-serif;
+        font-weight: 200;
+      }
+
+      #map {
+        /* height is set in JS */
+        background: #2d2f31;
+      }
+
+      .legend {
+        font-size: 1rem;
+        border-radius: 5px;
+        max-width: 200px;
+        font-family: "Open Sans", sans-serif;
+        background: rgba(100, 100, 100, 0.9);
+        color: rgba(244, 244, 244, 0.8);
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+      }
+
+      .legend h3 {
+        font-size: 1.1em;
+        font-weight: normal;
+        color: #ddd;
+        margin: 0 0 10px 0;
+      }
+
+      .legend span {
+        width: 20px;
+        height: 20px;
+        margin: 0 10px 4px 0;
+      }
+
+      .legend label {
+        font-size: 0.9rem;
+      }
+
+      .leaflet-bar a {
+        /* Override the default style for Leaflet's zoom  */
+        background: rgba(100, 100, 100, 0.9);
+        color: rgba(244, 244, 244, 0.8);
+      }
+
+      a:hover {
+        color: rgb(130, 131, 132);
+        text-decoration: none;
+      }
+
+      /* Custom Tool tips */
+      .leaflet-tooltip-own {
+        background: rgba(58, 58, 58, 0.955);
+        color: rgb(244, 244, 244);
+        border: none;
+        font-size: 1rem;
+        border-radius: 5px;
+        padding: 10px;
+        font-family: "Open Sans", sans-serif;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+      }
+
+      .leaflet-tooltip-left:before {
+        right: 0;
+        margin-right: -12px;
+        border-left-color: rgba(0, 0, 0, 0.4);
+      }
+
+      .leaflet-tooltip-right:before {
+        left: 0;
+        margin-left: -12px;
+        border-right-color: rgba(0, 0, 0, 0.4);
+      }
+
+      /* Small devices (landscape phones, 576px and up) */
+      @media (min-width: 576px) {
+      }
+
+      /* Medium devices (tablets, 768px and up) */
+      @media (min-width: 768px) {
+      }
+
+      /* Large devices (desktops, 992px and up) */
+      @media (min-width: 992px) {
+      }
+
+      /* Extra large devices (large desktops, 1200px and up) */
+      @media (min-width: 1200px) {
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container-fluid">
+      <header class="row bg-dark text-white p-2">
+        <div class="col-8">
+          <h1>County by County Housing Data in the USA</h1>
+        </div>
+        <div class="col-4 align-self-center">
+          <p class="d-flex justify-content-end my-auto">
+            <a
+              class="btn btn-secondary"
+              data-bs-toggle="offcanvas"
+              href="#offcanvasExample"
+              role="button"
+              aria-controls="offcanvasExample"
+            >
+              Map Info
+            </a>
+          </p>
+        </div>
+      </header>
+
+      <section class="row">
+        <div class="p-0">
+          <div id="map"></div>
+        </div>
+      </section>
+
+      <footer class="row bg-dark text-white p-2">
+        <p class="text-center"></p>
+      </footer>
+    </div>
+
+    <div
+      class="offcanvas offcanvas-start bg-dark text-white"
+      tabindex="-1"
+      id="offcanvasExample"
+      aria-labelledby="offcanvasExampleLabel"
+    >
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="offcanvasExampleLabel">Map Info</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="offcanvas"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="offcanvas-body">
+        <h3 class="py-2">
+          The US Census Conducts Extensive Research On Housing
+        </h3>
+        <p>
+          Use the filter in the top right to explore different housing facts by county. 
+          Straight from Census.gov.</p>
+          <blockquote>The <a href="https://www.census.gov/programs-surveys/acs/about.html" target="_">American Community Survey</a> (ACS) helps local officials, community leaders, and businesses understand the changes taking place in their communities. It is the premier source for detailed population and housing information about our nation.</blockquote>
+          <p>Proportions are of TOTAL housing units in each county</p>
+        <p>(Note the sharp geographic differences in homeownership <em>with</em> and <em>without</em> a mortgage.)</p>
+        <hr />
+        <ul class="list-unstyled">
+          <li>
+            authored by
+            <a href="https://michael-sparks13.github.io/portfolio/" target="_"
+              >sparks</a
+            >
+          </li>
+          <li>March 2023</li>
+          <li>
+            data via
+            <a href="https://data.census.gov/">American Community Survey</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="legend d-flex flex-column px-3 py-2" id="legend"></div>
+
+    <!-- ui is outside of container-fluid and will be dynamically added to map -->
+    <div class="form me-3 mt-3" id="dropdown-ui">
+      <select class="form-select bg-secondary text-white">
+        <option value="OWNED_MORT" selected>Owned with Mortgage</option>
+        <option value="OWNED_FREE">Owned Free and Clear</option>
+        <option value="RENTER">Rented</option>
+      </select>
+    </div>
+
+    <!-- Add Bootstrap -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4"
+      crossorigin="anonymous"
+    ></script>
+    <!-- then Leaflet JS -->
+    <script
+      src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+      integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+      crossorigin=""
+    ></script>
+    <!-- then Simple Statistics -->
+    <script src="https://unpkg.com/simple-statistics@7.8.3/dist/simple-statistics.min.js"></script>
+    <script>
+      // Add footer date
+      setDate();
+      // Fit page to window
+      fitLayout();
+
+      // window.onresize = function () {
+      //     location.reload();
+      //   };
+
+      window.addEventListener("resize", fitLayout);
+
+      function fitLayout() {
+        // set global variables for header, map container, and footer
+        const header = document.querySelector("header");
+        const mapContainer = document.querySelector("#map");
+        const footer = document.querySelector("footer");
+
+        // set map height to fill window
+        mapContainer.style.height =
+          window.innerHeight - header.offsetHeight - footer.offsetHeight + "px";
+      }
+
+      // initial Leaflet map options
+      const options = {
+        center: [38.84760453218009, -97.63924804208712], // Salina, KS
+        zoom: 4,
+        zoomSnap: 0.5,
+        zoomControl: false,
+        attributionControl: false,
+      };
+
+      // create Leaflet map and apply options
+      const map = L.map("map", options);
+
+      // create Leaflet panes for ordering map layers
+      setPanes = ["bottom", "middle", "top"];
+      setPanes.forEach((pane, i) => {
+        map.createPane(pane);
+        map.getPane(pane).style.zIndex = 401 + i;
+      });
+
+      // request a basemap tile layer with no labels and add to the map
+      // or dark_nolabels
+      L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
+        {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }
+      ).addTo(map);
+
+      // request a basemap tile layer with labels and add to the map but in a higher pane
+      // or dark_only_labels
+      L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",
+        {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          pane: "top",
+        }
+      ).addTo(map);
+
+      // set global variables for map layer,
+      // mapped attribute, and normalizing attribute
+      let attributeValue = "OWNED_MORT";
+      const normValue = "TOTAL";
+
+      //obviously not the best way to do this; other ideas
+      const labels = {
+        OWNED_MORT: "Owned with Mortgage",
+        OWNED_FREE: "Owned Free and Clear",
+        RENTER: "Rented",
+      };
+
+      // fetch data
+      fetch("data/acs.geojson")
+        // after it is returned...
+        .then(function (response) {
+          // Parse the JSON into a useable format, then return it
+          return response.json();
+        })
+        // The returned response is now data in a new then method
+        .then(function (data) {
+          // This is the JSON from our response
+          drawMap(data);
+        })
+        // If there is an error, log it to the console
+        .catch(function (error) {
+          console.log(error);
+        });
+
+      
+      setData = [
+        {
+          source: "data/acs.geojson",
+          interactive: true,
+          options: {
+            pane: "bottom",
+            styles: {
+              color: "black",
+              weight: 0.1,
+              fillOpacity: 0.8,
+            },
+          },
+        },
+        {
+          source: "https://newmapsplus.github.io/assets/data/us_states_20m.geojson",
+          options: {
+            pane: "middle",
+            styles: {
+              color: "black",
+              weight: 1,
+              fillOpacity: 0,
+              interactive: false,
+            },
+          },
+        },
+      ];
+
+      setData.forEach((layer) => {
+        fetch(layer.source)
+          .then((response) => {
+            return response.json();
+          })
+          .then((data) => {
+            if (layer.interactive) {
+              drawMap(data, layer.options);
+            } else {
+              drawLayer(data, layer.options);
+            }
+          });
+      });
+
+      // Example of keeping your page fresh
+      function setDate() {
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = date.toLocaleString("default", { month: "long" });
+        const footerText = document.querySelector("footer p");
+        footerText.innerHTML = `${month} ${year} | New Maps Plus`;
+      }
+
+      function drawMap(data, options) {
+        const counties = L.geoJson(data, {
+          style: function (feature) {
+            return options.styles;
+          },
+          // add hover/touch functionality to each feature layer
+          onEachFeature: function (feature, layer) {
+            layer.on("mouseover", function () {
+              layer
+                .setStyle({
+                  color: "#000",
+                  weight: 2,
+                })
+                .bringToFront();
+            });
+            layer.on("mouseout", function () {
+              // reset the layer style to its original stroke color
+              layer.setStyle({
+                color: "#20282e",
+                weight: options.styles.weight,
+              })
+              .bringToBack();
+            });
+          },
+          pane: options.pane,
+        }).addTo(map);
+
+        addUi(counties);
+        addLegend();
+        updateMap(counties);
+      }
+
+      function drawLayer(data, options) {
+        L.geoJson(data, {
+          style: function (feature) {
+            return options.styles;
+          },
+          pane: options.pane,
+        }).addTo(map);
+      }
+
+      function updateMap(counties) {
+        const breaks = getClassBreaks(counties);
+
+        counties.eachLayer(function (layer) {
+          const props = layer.feature.properties;
+
+          //set fill color based on attribute's normalized val
+          layer.setStyle({
+            fillColor: getColor(
+              props[attributeValue] / props[normValue],
+              breaks
+            ),
+          });
+
+          let tooltipInfo = `<b>${props["FULL_NAME"]}</b></br>
+    ${((props[attributeValue] / props[normValue]) * 100).toLocaleString()}%`;
+
+          layer.bindTooltip(tooltipInfo, {
+            sticky: true,
+          });
+        });
+
+        updateLegend(breaks);
+      }
+
+      function getClassBreaks(counties) {
+        const values = [];
+
+        // loop through all the counties
+        counties.eachLayer(function (layer) {
+          let value =
+            layer.feature.properties[attributeValue] /
+            layer.feature.properties[normValue];
+            if ((value) && (value != 0))  {
+              values.push(value); // push the normalized value for each layer into the Array
+            };
+        });
+
+        console.log('values')
+        console.log(values)
+
+        const clusters = ss.ckmeans(values, 5);
+
+        const breaks = clusters.map(function (cluster) {
+          return [cluster[0], cluster.pop()];
+        });
+        return breaks;
+      }
+
+      function getColor(d, breaks) {
+        if (d <= breaks[0][1]) {
+          return "#feedde";
+        } else if (d <= breaks[1][1]) {
+          return "#fdbe85";
+        } else if (d <= breaks[2][1]) {
+          return "#fd8d3c";
+        } else if (d <= breaks[3][1]) {
+          return "#e6550d";
+        } else if (d <= breaks[4][1]) {
+          return "#a63603";
+        }
+      }
+
+      function addLegend() {
+        const legendControl = L.control({ position: "topleft" });
+
+        legendControl.onAdd = function () {
+          const legend = L.DomUtil.get("legend");
+
+          L.DomEvent.disableScrollPropagation(legend);
+          L.DomEvent.disableClickPropagation(legend);
+          return legend;
+        };
+
+        legendControl.addTo(map);
+      }
+
+      function updateLegend(breaks) {
+        const legend = document.querySelector("#legend");
+        legend.innerHTML = `<h5>${labels[attributeValue]}</h5>`;
+
+        for (let i = 0; i <= breaks.length - 1; i++) {
+          let color = getColor(breaks[i][0], breaks);
+
+          legend.innerHTML += `<div class="d-flex flex-row justify-content-start">
+          <span style="background:${color}"></span>
+          <label>${(breaks[i][0] * 100).toFixed(1)} &mdash; 
+          ${(breaks[i][1] * 100).toFixed(1)}%</label>
+      </div>`;
+        }
+      }
+
+      function addUi(counties) {
+        let selectControl = L.control({ position: "topright" });
+
+        // when control is added
+        selectControl.onAdd = function () {
+          // get the element with id attribute of ui-controls
+          return L.DomUtil.get("dropdown-ui");
+        };
+        // add the control to the map
+        selectControl.addTo(map);
+
+        const dropdown = document.querySelector("#dropdown-ui select");
+        dropdown.addEventListener("change", function (e) {
+          attributeValue = e.target.value;
+          updateMap(counties);
+        });
+      }
+    </script>
+  </body>
+</html>
